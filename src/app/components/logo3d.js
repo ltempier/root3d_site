@@ -1,50 +1,47 @@
 "use client";
-
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import {
-    useGLTF,
-    PerspectiveCamera,
-    OrbitControls,
-    Environment,
-    Lightformer,
-} from "@react-three/drei";
+import { useGLTF, PerspectiveCamera, OrbitControls, Loader } from "@react-three/drei";
 import { Leva, useControls } from "leva";
 import * as THREE from "three";
 
+// Importer les effets de post-traitement
+import {
+    EffectComposer, Bloom, Noise, ChromaticAberration, Vignette, Outline
+} from "@react-three/postprocessing";
+
 /* ===================== MODEL ===================== */
 function Model(props) {
-    const { nodes } = useGLTF("/files/logo_root3d_2/logo_root3d_2.gltf");
+    const { nodes, materials } = useGLTF("/logo_root3d_2/logo_root3d_2.gltf");
 
-    // Définir des matériaux sans propriétés inutiles
     const metalnessValue = 0.5;
     const roughnessValue = 0.0;
-    const transmissionValue = 1.0;
-    const thicknessValue = 2.0;
 
-    // 🔥 LEVA pour chaque pièce
     const piece1 = useControls("Middle", {
         color: "#ffffff",
+        emissive: "#ffffff",
+        emissiveIntensity: { value: 1, min: 0, max: 5, step: 0.1 },
+        opacity: { value: 1, min: 0, max: 1, step: 0.01 },
         roughness: { value: 0.5, min: 0, max: 1, step: 0.01 },
-        metalness: { value: 0.5, min: 0, max: 1, step: 0.01 },
-        transmission: { value: transmissionValue, min: 0, max: 1, step: 0.01 }, // Transparence
-        thickness: { value: thicknessValue, min: 0, max: 5, step: 0.1 }, // Épaisseur du matériau
+        metalness: { value: 0.5, min: 0, max: 1, step: 0.01 }
     });
 
     const piece2 = useControls("Left", {
-        color: "#00FFFF", // Aqua saturé
+        color: "#00FFFF",
+        emissive: "#00FFFF",
+        emissiveIntensity: { value: 1, min: 0, max: 5, step: 0.1 },
+        opacity: { value: 1, min: 0, max: 1, step: 0.01 },
         roughness: { value: roughnessValue, min: 0, max: 1, step: 0.01 },
-        metalness: { value: metalnessValue, min: 0, max: 1, step: 0.01 },
-        transmission: { value: transmissionValue, min: 0, max: 1, step: 0.01 }, // Transparence
-        thickness: { value: thicknessValue, min: 0, max: 5, step: 0.1 }, // Épaisseur du matériau
+        metalness: { value: metalnessValue, min: 0, max: 1, step: 0.01 }
     });
 
     const piece3 = useControls("Right", {
-        color: "#FF0000", // Rouge saturé
+        color: "#FF0000",
+        emissive: "#FF0000",
+        emissiveIntensity: { value: 1, min: 0, max: 5, step: 0.1 },
+        opacity: { value: 1, min: 0, max: 1, step: 0.01 },
         roughness: { value: roughnessValue, min: 0, max: 1, step: 0.01 },
-        metalness: { value: metalnessValue, min: 0, max: 1, step: 0.01 },
-        transmission: { value: transmissionValue, min: 0, max: 1, step: 0.01 }, // Transparence
-        thickness: { value: thicknessValue, min: 0, max: 5, step: 0.1 }, // Épaisseur du matériau
+        metalness: { value: metalnessValue, min: 0, max: 1, step: 0.01 }
     });
 
     const pieces = [
@@ -68,6 +65,10 @@ function Model(props) {
                         >
                             <meshStandardMaterial
                                 color={material.color}
+                                emissive={material.emissive}
+                                emissiveIntensity={material.emissiveIntensity}
+                                opacity={material.opacity}
+                                transparent={material.opacity !== 1}
                                 roughness={material.roughness}
                                 metalness={material.metalness}
                                 side={THREE.DoubleSide}
@@ -83,6 +84,7 @@ function Model(props) {
 
 /* ===================== SCENE ===================== */
 const Logo = () => {
+    const [loaded, setLoaded] = useState(false);
     const axesRef = useRef(null);
 
     useEffect(() => {
@@ -95,20 +97,33 @@ const Logo = () => {
         }
     }, []);
 
-    // 🔥 LEVA pour manipuler les lumières
-    const { ambientIntensity, directionalIntensity, pointIntensity, spotIntensity } = useControls({
-        ambientIntensity: { value: 0.6, min: 0, max: 100, step: 0.1 },  // Augmenté
-        directionalIntensity: { value: 6, min: 0, max: 100, step: 1 },  // Augmenté
-        pointIntensity: { value: 10, min: 0, max: 100, step: 0.1 },  // Augmenté
-        spotIntensity: { value: 10, min: 0, max: 100, step: 0.1 },  // Augmenté
+    const {
+        bloomIntensity,
+        bloomWidth,
+        bloomHeight,
+        bloomKernelSize,
+        bloomLuminanceThreshold,
+        bloomLuminanceSmoothing,
+        chromaticAberrationOffset,
+        vignetteDarkness,
+        vignetteOffset
+    } = useControls({
+        bloomIntensity: { value: 0, min: 0, max: 5, step: 0.1 },
+        bloomWidth: { value: 300, min: 100, max: 1000, step: 10 },
+        bloomHeight: { value: 300, min: 100, max: 1000, step: 10 },
+        bloomKernelSize: { value: 3, min: 1, max: 5, step: 1 },
+        bloomLuminanceThreshold: { value: 0, min: 0, max: 1, step: 0.01 },
+        bloomLuminanceSmoothing: { value: 0, min: 0, max: 1, step: 0.01 },
+        chromaticAberrationOffset: { value: [0.0, 0.01], min: -0.1, max: 0.1, step: 0.001 },
+        vignetteDarkness: { value: 1, min: 0, max: 2, step: 0.1 },
+        vignetteOffset: { value: 0.1, min: 0, max: 1, step: 0.01 }
     });
 
     return (
         <>
             {/* 🔥 LEVA UI */}
-            <Leva collapsed={false} />
+            <Leva collapsed={false} hidden={true} />
 
-            {/* Remplacement de Chakra UI Box par un div */}
             <div
                 style={{
                     position: "absolute",
@@ -119,38 +134,38 @@ const Logo = () => {
                     pointerEvents: "auto",
                 }}
             >
-                <Canvas shadows gl={{ antialias: true, alpha: true }}>
-                    <color attach="background" args={['#0400FF']} />
-                    <color attach="background" args={['#F2F2F2']} />
+                <Canvas
+                    shadows
+                    gl={{ antialias: true, alpha: true }}
+                    onCreated={() => setLoaded(true)}
+                >
+                    <color attach="background" args={['#000000']} />
+                    <color attach="background" args={['#0000ff']} />
 
-                    <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={60} near={0.1} far={200} />
-                    <OrbitControls target={[0, 0, 0]} minDistance={2} maxDistance={40} dampingFactor={0.08} rotateSpeed={0.5} />
+                    <PerspectiveCamera makeDefault position={[0, 0, 11]} fov={60} near={0.1} far={200} />
+                    <OrbitControls target={[0, 0, 0]} minDistance={2} maxDistance={40} dampingFactor={0.08} rotateSpeed={1} />
 
-                    {/* Lumière ambiante */}
-                    <ambientLight intensity={ambientIntensity} />
+                    <ambientLight intensity={0.5} />
+                    <directionalLight position={[5, 6, 4]} intensity={1} castShadow />
 
-                    {/* Lumière directionnelle rapprochée */}
-                    <directionalLight position={[5, 6, 4]} intensity={directionalIntensity} castShadow />
-
-                    {/* Lumière ponctuelle rapprochée */}
-                    <pointLight position={[2, 3, 2]} intensity={pointIntensity} castShadow />
-
-                    {/* SpotLight rapproché */}
-                    <spotLight position={[0, 5, 2]} angle={Math.PI / 8} penumbra={1} intensity={spotIntensity} castShadow />
-
-                    {/* Lumière d'environnement */}
-                    <Environment resolution={512}>
-                        <group rotation={[-Math.PI / 3, 0, 1]}>
-                            <Lightformer form="circle" intensity={5} rotation-x={Math.PI / 2} position={[0, 5, -9]} scale={7} />
-                            <Lightformer form="circle" intensity={3} rotation-y={Math.PI / 2} position={[-5, 1, -1]} scale={2} />
-                            <Lightformer form="circle" intensity={3} rotation-y={Math.PI / 2} position={[-5, -1, -1]} scale={2} />
-                            <Lightformer form="circle" intensity={3} rotation-y={-Math.PI / 2} position={[10, 1, 0]} scale={8} />
-                        </group>
-                    </Environment>
+                    {/* Effets de post-traitement */}
+                    <EffectComposer>
+                        <ChromaticAberration offset={chromaticAberrationOffset} />
+                        <Bloom
+                            intensity={bloomIntensity}
+                            width={bloomWidth}
+                            height={bloomHeight}
+                            kernelSize={bloomKernelSize}
+                            luminanceThreshold={bloomLuminanceThreshold}
+                            luminanceSmoothing={bloomLuminanceSmoothing}
+                        />
+                        <Vignette eskil={false} offset={vignetteOffset} darkness={vignetteDarkness} />
+                    </EffectComposer>
 
                     {/* Modèle */}
-                    <Model scale={10} position={[0, 0, 1.5]} />
+                    {loaded && <Model scale={10} position={[0, 0, 1.5]} />}
                 </Canvas>
+                <Loader />
             </div>
         </>
     );
