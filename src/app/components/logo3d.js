@@ -142,7 +142,7 @@ const Logo = () => {
                     <color attach="background" args={['#000000']} />
                     <color attach="background" args={['#0000ff']} />
 
-                    <PerspectiveCamera makeDefault position={[0, 0, 13]} fov={60} near={0.1} far={200} />
+                    <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={60} near={0.1} far={200} />
                     <OrbitControls target={[0, 0, 0]} minDistance={2} maxDistance={40} dampingFactor={0.08} rotateSpeed={1} />
 
                     <ambientLight intensity={0.5} />
