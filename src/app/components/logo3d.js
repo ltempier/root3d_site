@@ -1,6 +1,6 @@
 "use client";
 import React, { useRef, useEffect, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF, PerspectiveCamera, OrbitControls, Loader } from "@react-three/drei";
 import { Leva, useControls } from "leva";
 import * as THREE from "three";
@@ -84,6 +84,52 @@ function Model(props) {
     );
 }
 
+function RainbowLights({ count = 50, radius = 3 }) {
+    const lightsRef = useRef([])
+
+    const lights = React.useMemo(() => {
+        return Array.from({ length: count }).map(() => {
+            const theta = Math.random() * Math.PI * 2
+            const phi = Math.acos(2 * Math.random() - 1)
+
+            return {
+                theta,
+                phi,
+                speed: 0.025,
+                color: new THREE.Color().setHSL(Math.random(), 1, 0.6),
+            }
+        })
+    }, [count])
+
+    useFrame((_, delta) => {
+        lights.forEach((light, i) => {
+            light.theta += delta * light.speed
+
+            const x = radius * Math.sin(light.phi) * Math.cos(light.theta)
+            const y = radius * Math.cos(light.phi)
+            const z = radius * Math.sin(light.phi) * Math.sin(light.theta)
+
+            if (lightsRef.current[i]) {
+                lightsRef.current[i].position.set(x, y, z)
+            }
+        })
+    })
+
+    return (
+        <>
+            {lights.map((light, i) => (
+                <directionalLight
+                    key={i}
+                    ref={(el) => (lightsRef.current[i] = el)}
+                    intensity={5}
+                    color={light.color}
+                />
+            ))}
+        </>
+    )
+}
+
+
 /* ===================== SCENE ===================== */
 const Logo = () => {
     const [loaded, setLoaded] = useState(false);
@@ -146,28 +192,6 @@ const Logo = () => {
         },
     ]
 
-    const rainbowColors = [
-        "#ff004c", "#ff7a00", "#ffe600", "#00ff88", "#00c8ff", "#5b5bff", "#c000ff"
-    ]
-
-    const rainbowLights = []
-
-    const radius = 2 // distance max du centre
-    const count = 51
-
-    for (let i = 0; i < count; i++) {
-        const theta = Math.acos(2 * Math.random() - 1) // angle vertical aléatoire 0->π
-        const phi = Math.random() * Math.PI * 2        // angle horizontal 0->2π
-
-        const x = radius * Math.sin(theta) * Math.cos(phi)
-        const y = radius * Math.sin(theta) * Math.sin(phi)
-        const z = radius * Math.cos(theta)
-
-        const color = rainbowColors[i % rainbowColors.length]
-
-        rainbowLights.push({ position: [x, y, z], color })
-    }
-
     return (
         <>
             {/* 🔥 LEVA UI */}
@@ -191,19 +215,12 @@ const Logo = () => {
                     <color attach="background" args={['#000000']} />
                     {/* <color attach="background" args={['#0000ff']} /> */}
 
-                    <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={60} near={0.1} far={200} />
+                    <PerspectiveCamera makeDefault position={[0, 2, 12]} fov={60} near={0.1} far={200} />
                     <OrbitControls target={[0, 0, 0]} minDistance={2} maxDistance={40} dampingFactor={0.08} rotateSpeed={1} />
 
                     <ambientLight intensity={0.18} />
 
-                    {rainbowLights.map((light, i) => (
-                        <directionalLight
-                            key={i}
-                            position={light.position}
-                            intensity={5}
-                            color={light.color}
-                        />
-                    ))}
+                    <RainbowLights count={30} radius={2} />
 
 
                     {/* Effets de post-traitement */}
