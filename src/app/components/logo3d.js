@@ -15,12 +15,12 @@ function Model(props) {
     const { nodes, materials } = useGLTF("/logo_root3d_2/logo_root3d_2.gltf");
 
     const metalnessValue = 1
-    const roughnessValue = 0.10
+    const roughnessValue = 0.01
 
     const piece1 = useControls("Middle", {
         color: "#ffffff",
         emissive: "#ffffff",
-        emissiveIntensity: { value: 0.6, min: 0, max: 5, step: 0.01 },
+        emissiveIntensity: { value: 0.7, min: 0, max: 5, step: 0.01 },
         opacity: { value: 1, min: 0, max: 1, step: 0.01 },
         // roughness: { value: 0.5, min: 0, max: 1, step: 0.01 },
         // metalness: { value: 0.5, min: 0, max: 1, step: 0.01 },
@@ -84,7 +84,7 @@ function Model(props) {
     );
 }
 
-function RainbowLights({ count = 50, radius = 3 }) {
+function RainbowLights({ count = 50, radius = 3,intensity=5 }) {
     const lightsRef = useRef([])
 
     const lights = React.useMemo(() => {
@@ -95,7 +95,7 @@ function RainbowLights({ count = 50, radius = 3 }) {
             return {
                 theta,
                 phi,
-                speed: 0.025,
+                speed: 0,
                 color: new THREE.Color().setHSL(Math.random(), 1, 0.6),
             }
         })
@@ -121,7 +121,7 @@ function RainbowLights({ count = 50, radius = 3 }) {
                 <directionalLight
                     key={i}
                     ref={(el) => (lightsRef.current[i] = el)}
-                    intensity={5}
+                    intensity={intensity}
                     color={light.color}
                 />
             ))}
@@ -215,12 +215,12 @@ const Logo = () => {
                     <color attach="background" args={['#000000']} />
                     {/* <color attach="background" args={['#0000ff']} /> */}
 
-                    <PerspectiveCamera makeDefault position={[0, 2, 12]} fov={60} near={0.1} far={200} />
+                    <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={60} near={0.1} far={200} />
                     <OrbitControls target={[0, 0, 0]} minDistance={2} maxDistance={40} dampingFactor={0.08} rotateSpeed={1} />
 
                     <ambientLight intensity={0.18} />
 
-                    <RainbowLights count={30} radius={2} />
+                    <RainbowLights count={30} radius={3} intensity={5}/>
 
 
                     {/* Effets de post-traitement */}
