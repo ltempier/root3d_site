@@ -171,7 +171,7 @@ const Logo = () => {
     return (
         <>
             {/* 🔥 LEVA UI */}
-            <Leva collapsed={false} hidden={false} />
+            <Leva collapsed={false} hidden={true} />
 
             <div
                 style={{
