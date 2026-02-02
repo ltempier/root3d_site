@@ -14,16 +14,18 @@ import {
 function Model(props) {
     const { nodes, materials } = useGLTF("/logo_root3d_2/logo_root3d_2.gltf");
 
-    const metalnessValue = 0.5;
-    const roughnessValue = 0.0;
+    const metalnessValue = 1
+    const roughnessValue = 0.10
 
     const piece1 = useControls("Middle", {
         color: "#ffffff",
         emissive: "#ffffff",
-        emissiveIntensity: { value: 1, min: 0, max: 5, step: 0.1 },
+        emissiveIntensity: { value: 0.6, min: 0, max: 5, step: 0.01 },
         opacity: { value: 1, min: 0, max: 1, step: 0.01 },
-        roughness: { value: 0.5, min: 0, max: 1, step: 0.01 },
-        metalness: { value: 0.5, min: 0, max: 1, step: 0.01 }
+        // roughness: { value: 0.5, min: 0, max: 1, step: 0.01 },
+        // metalness: { value: 0.5, min: 0, max: 1, step: 0.01 },
+        roughness: { value: roughnessValue, min: 0, max: 1, step: 0.01 },
+        metalness: { value: metalnessValue, min: 0, max: 1, step: 0.01 }
     });
 
     const piece2 = useControls("Left", {
@@ -108,21 +110,68 @@ const Logo = () => {
         vignetteDarkness,
         vignetteOffset
     } = useControls({
-        bloomIntensity: { value: 0, min: 0, max: 5, step: 0.1 },
+        bloomIntensity: { value: 0.01, min: 0, max: 5, step: 0.01 },
         bloomWidth: { value: 300, min: 100, max: 1000, step: 10 },
         bloomHeight: { value: 300, min: 100, max: 1000, step: 10 },
         bloomKernelSize: { value: 3, min: 1, max: 5, step: 1 },
         bloomLuminanceThreshold: { value: 0, min: 0, max: 1, step: 0.01 },
         bloomLuminanceSmoothing: { value: 0, min: 0, max: 1, step: 0.01 },
         chromaticAberrationOffset: { value: [0.0, 0.01], min: -0.1, max: 0.1, step: 0.001 },
-        vignetteDarkness: { value: 1, min: 0, max: 2, step: 0.1 },
+        vignetteDarkness: { value: 0.5, min: 0, max: 2, step: 0.1 },
         vignetteOffset: { value: 0.1, min: 0, max: 1, step: 0.01 }
     });
+
+    const directionalLights = [
+        {
+            name: "key",
+            position: [6, 8, 12],
+            intensity: 1.1,
+            castShadow: true,
+            shadowSize: 2048,
+            color: "#ffffff",
+        },
+        {
+            name: "fill",
+            position: [-6, -4, 6],
+            intensity: 0.45,
+            castShadow: false,
+            color: "#ffffff",
+        },
+        {
+            name: "rim",
+            position: [0, 6, -14],
+            intensity: 3,
+            castShadow: false,
+            color: "#99ccff",
+        },
+    ]
+
+    const rainbowColors = [
+        "#ff004c", "#ff7a00", "#ffe600", "#00ff88", "#00c8ff", "#5b5bff", "#c000ff"
+    ]
+
+    const rainbowLights = []
+
+    const radius = 2 // distance max du centre
+    const count = 51
+
+    for (let i = 0; i < count; i++) {
+        const theta = Math.acos(2 * Math.random() - 1) // angle vertical aléatoire 0->π
+        const phi = Math.random() * Math.PI * 2        // angle horizontal 0->2π
+
+        const x = radius * Math.sin(theta) * Math.cos(phi)
+        const y = radius * Math.sin(theta) * Math.sin(phi)
+        const z = radius * Math.cos(theta)
+
+        const color = rainbowColors[i % rainbowColors.length]
+
+        rainbowLights.push({ position: [x, y, z], color })
+    }
 
     return (
         <>
             {/* 🔥 LEVA UI */}
-            <Leva collapsed={false} hidden={true} />
+            <Leva collapsed={false} hidden={false} />
 
             <div
                 style={{
@@ -140,13 +189,22 @@ const Logo = () => {
                     onCreated={() => setLoaded(true)}
                 >
                     <color attach="background" args={['#000000']} />
-                    <color attach="background" args={['#0000ff']} />
+                    {/* <color attach="background" args={['#0000ff']} /> */}
 
-                    <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={60} near={0.1} far={200} />
+                    <PerspectiveCamera makeDefault position={[0, 0, 12]} fov={60} near={0.1} far={200} />
                     <OrbitControls target={[0, 0, 0]} minDistance={2} maxDistance={40} dampingFactor={0.08} rotateSpeed={1} />
 
-                    <ambientLight intensity={0.5} />
-                    <directionalLight position={[5, 6, 4]} intensity={1} castShadow />
+                    <ambientLight intensity={0.18} />
+
+                    {rainbowLights.map((light, i) => (
+                        <directionalLight
+                            key={i}
+                            position={light.position}
+                            intensity={5}
+                            color={light.color}
+                        />
+                    ))}
+
 
                     {/* Effets de post-traitement */}
                     <EffectComposer>
@@ -159,6 +217,7 @@ const Logo = () => {
                             luminanceThreshold={bloomLuminanceThreshold}
                             luminanceSmoothing={bloomLuminanceSmoothing}
                         />
+
                         <Vignette eskil={false} offset={vignetteOffset} darkness={vignetteDarkness} />
                     </EffectComposer>
 
