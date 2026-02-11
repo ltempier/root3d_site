@@ -69,11 +69,13 @@ function Model(props) {
                                 color={material.color}
                                 emissive={material.emissive}
                                 emissiveIntensity={material.emissiveIntensity}
-                                opacity={material.opacity}
-                                transparent={material.opacity !== 1}
+                                // opacity={material.opacity}
+                                // transparent={material.opacity !== 1}
                                 roughness={material.roughness}
                                 metalness={material.metalness}
-                                side={THREE.DoubleSide}
+                                // side={THREE.DoubleSide}
+                                envMap={2}
+                                // wireframe={true}
                             />
                         </mesh>
                     );
@@ -220,7 +222,7 @@ const Logo = () => {
 
                     <ambientLight intensity={0.18} />
 
-                    <RainbowLights count={30} radius={3} intensity={5}/>
+                    <RainbowLights count={5} radius={3} intensity={5}/>
 
 
                     {/* Effets de post-traitement */}
